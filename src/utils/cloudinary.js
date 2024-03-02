@@ -25,4 +25,15 @@ async function uploadOnCloudinary(localFilePath) {
         return null
     }
 }
-export { uploadOnCloudinary };
+
+async function deleteOnCloudinary(imageUrl) {
+    try {
+        if (!imageUrl) return null
+        const response = await v2.uploader.destroy(imageUrl);
+        console.log("file is deleted on cloudinary",
+            response);
+    } catch (error) {
+        return null
+    }
+}
+export { uploadOnCloudinary, deleteOnCloudinary };
