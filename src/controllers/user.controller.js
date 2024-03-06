@@ -1,17 +1,18 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { User } from '../models/user.model.js'
 import { ApiError } from '../utils/ApiError.js'
-import { uploadOnCloudinary, deleteOnCloudinary } from "../utils/cloudinary.js"
+import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 
 
 const genrateAccessTokenAndRefreshToken = async (userId) => {
     try {
-        const user = await User.findOne({ userId })
+        const user = await User.findById(userId);
         const accessToken = await user.genrateAccessToken()
         const refreshToken = await user.genrateRefreshToken()
 
         user.refershToken = refreshToken
+        console.log("genrate5");
         await user.save({ validateBeforeSave: false })
 
         return { accessToken, refreshToken }
@@ -36,7 +37,6 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
     const avatarLocal = req.files?.avatar[0]?.path;
-    console.log(req.files?.avatar[0]?.path);
     // const coverImageLocal = req.files?.coverImage[0]?.path;
 
     let coverImageLocal;
@@ -49,7 +49,8 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
     const avatar = await uploadOnCloudinary(avatarLocal);
-    const coverImage = await uploadOnCloudinary(coverImageLocal)
+    const coverImage = await uploadOnCloudinary(coverImageLocal);
+
 
     if (!avatar) {
         throw new ApiError(400, "Avatar file is required");
@@ -72,7 +73,7 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
     return res.status(201).json(
-        new ApiResponse(200, createdUser, "User refistered suscessfully")
+        new ApiResponse(200, createdUser, "User registered suscessfully")
     )
     // step 1. => sending details of user
     // step 2. => checking user does not exits in db with the same username or email
@@ -89,6 +90,7 @@ const loginUser = asyncHandler(async (req, res) => {
 
     const { email, username, password } = req.body
 
+
     if (!username || !email) {
         throw new ApiError(400, "username or email is required")
     }
@@ -102,7 +104,6 @@ const loginUser = asyncHandler(async (req, res) => {
     }
 
     const isPasswordValid = await user.isPasswordCorrect(password);
-
     if (!isPasswordValid) {
         throw new ApiError(400, "Password is incorrect");
     }
@@ -230,7 +231,9 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 
 const getUser = asyncHandler(async (req, res) => {
     const user = req.user
-    return res.status(200).json(200, user, "current user fetched successfully")
+    return res.status(200).json(
+        new ApiResponse(200, user, "current user fetched successfully")
+    )
 })
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
@@ -276,7 +279,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
         }
     }, { new: true }).select("-password")
 
-    deleteOnCloudinary(avatar);
+    // deleteOnCloudinary(avatar);
 
     return res
         .status(200)
@@ -310,7 +313,7 @@ const updateCoverImage = asyncHandler(async (req, res) => {
     ).select("-password")
 
 
-    deleteOnCloudinary(coverImage);
+    // deleteOnCloudinary(coverImage);
 
     return res
         .status(200)
@@ -444,4 +447,3 @@ const getWatchHistory = asyncHandler(async (req, res) => {
 })
 
 export { registerUser, loginUser, logoutUser, refreshAccessToken, changeCurrentPassword, getUser, updateAccountDetails, updateUserAvatar, updateCoverImage, getUserChannelProfile, getWatchHistory }
-
